@@ -9,6 +9,9 @@ export const NEO4J_PASSWORD = process.env.NEO4J_PASSWORD ?? required("NEO4J_PASS
 // board gets picked up again within the demo. Agents simulate 3-9s of work.
 export const LEASE_MINUTES = Number(process.env.LEASE_MINUTES ?? "10");
 
+// A failing reviewer must not be able to loop a subtask forever.
+export const DEFAULT_MAX_ATTEMPTS = Number(process.env.MAX_ATTEMPTS ?? "3");
+
 export const driver = neo4j.driver(
   NEO4J_URI,
   neo4j.auth.basic(NEO4J_USER, NEO4J_PASSWORD),
@@ -26,6 +29,12 @@ export async function initSchema(): Promise<void> {
   );
   await driver.executeQuery(
     "CREATE CONSTRAINT event_id IF NOT EXISTS FOR (e:Event) REQUIRE e.id IS UNIQUE",
+  );
+  await driver.executeQuery(
+    "CREATE CONSTRAINT project_id IF NOT EXISTS FOR (p:Project) REQUIRE p.id IS UNIQUE",
+  );
+  await driver.executeQuery(
+    "CREATE CONSTRAINT memory_id IF NOT EXISTS FOR (m:Memory) REQUIRE m.id IS UNIQUE",
   );
   // The entire locking mechanism: at most one active CLAIMED_BY edge per task.
   await driver.executeQuery(

@@ -1,3 +1,12 @@
+/**
+ * Coworker simulator — not part of the product.
+ *
+ * Real subagents are spawned by the manager in an MCP client. This scripted loop
+ * just works the standalone board (claim → work → done) so you can watch claim
+ * contention and lease takeover without attaching a second AI client. It cannot
+ * disturb a project: it only picks tasks at status 'todo', and project subtasks
+ * rest at 'awaiting'.
+ */
 import { optional } from "./env.js";
 import { BoardClient, TaskView } from "./mcp.js";
 

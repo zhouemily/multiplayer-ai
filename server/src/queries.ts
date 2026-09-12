@@ -1,8 +1,42 @@
 import { int } from "neo4j-driver";
 import { driver, LEASE_MINUTES } from "./db.js";
 
-export const TASK_STATUSES = ["todo", "in_progress", "done"] as const;
+/**
+ * "awaiting" is the resting state of a project subtask between steps. It is
+ * deliberately not "todo": plain board agents treat "todo" as free work, so a
+ * subtask waiting for its reviewer would otherwise be grabbed and driven
+ * straight to done, skipping the pipeline.
+ */
+export const TASK_STATUSES = ["todo", "awaiting", "in_progress", "done", "blocked"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
+
+/** Statuses a task can never be claimed out of. */
+export const TERMINAL_STATUSES = ["done", "blocked"] as const;
+
+export const STEPS = ["design", "design_review", "execute", "execute_review", "done"] as const;
+export type StepName = (typeof STEPS)[number];
+
+export const REVIEW_STEPS = ["design_review", "execute_review"] as const;
+export const WORK_STEPS = ["design", "execute"] as const;
+export type WorkStep = (typeof WORK_STEPS)[number];
+
+/** Submitting a work step sends it to that step's reviewer. */
+export const AFTER_WORK: Record<WorkStep, StepName> = {
+  design: "design_review",
+  execute: "execute_review",
+};
+
+/** A passing review moves the pipeline on; execute_review is the finish line. */
+export const AFTER_PASS: Record<string, StepName> = {
+  design_review: "execute",
+  execute_review: "done",
+};
+
+/** A failing review sends the work back to whoever does that step next. */
+export const AFTER_FAIL: Record<string, WorkStep> = {
+  design_review: "design",
+  execute_review: "execute",
+};
 
 export interface TaskView {
   id: string;
@@ -13,6 +47,11 @@ export interface TaskView {
   leaseExpiresAt: string | null;
   result: string | null;
   createdAt: string;
+  /** Pipeline position. Null for standalone board tasks with no project. */
+  step: StepName | null;
+  /** Which design/execute round this subtask is on. Null for standalone tasks. */
+  attempt: number | null;
+  projectId: string | null;
 }
 
 export interface AgentView {
@@ -38,13 +77,18 @@ export async function listTasks(): Promise<TaskView[]> {
     `
     MATCH (t:Task)
     OPTIONAL MATCH (a:Agent)-[r:CLAIMED_BY]->(t)
+    OPTIONAL MATCH (p:Project)-[:HAS_SUBTASK]->(t)
     RETURN t.id AS id, t.title AS title, t.status AS status,
            t.result AS result, t.createdAt AS createdAt,
+           t.step AS step, t.attempt AS attempt, p.id AS projectId,
            a.id AS claimedBy, r.leaseExpiresAt AS leaseExpiresAt
     ORDER BY t.createdAt ASC, t.id ASC
     `,
   );
-  return result.records.map((r) => r.toObject() as TaskView);
+  return result.records.map((r) => {
+    const row = r.toObject() as TaskView & { attempt: unknown };
+    return { ...row, attempt: row.attempt === null ? null : Number(row.attempt) };
+  });
 }
 
 export async function listAgents(): Promise<AgentView[]> {
@@ -104,7 +148,7 @@ export async function claimTask(taskId: string, agentId: string) {
         `
         MATCH (t:Task {id: $taskId})
         MATCH (a:Agent {id: $agentId})
-        WHERE t.status <> 'done'
+        WHERE NOT t.status IN $terminal
         OPTIONAL MATCH (prev:Agent)-[stale:CLAIMED_BY]->(t)
         WHERE stale.leaseExpiresAt <= $now OR stale.leaseExpiresAt IS NULL
         WITH t, a, collect(stale) AS expired, collect(prev.id) AS prevHolders
@@ -125,7 +169,7 @@ export async function claimTask(taskId: string, agentId: string) {
         })
         RETURN t.id AS taskId
         `,
-        { taskId, agentId, now, leaseUntil },
+        { taskId, agentId, now, leaseUntil, terminal: [...TERMINAL_STATUSES] },
       );
       return (await result).records;
     });
@@ -167,7 +211,11 @@ export async function releaseTask(taskId: string, actorId: string) {
         `
         MATCH (t:Task {id: $taskId})<-[r:CLAIMED_BY]-(a:Agent)
         DELETE r
-        SET t.status = CASE t.status WHEN 'in_progress' THEN 'todo' ELSE t.status END,
+        SET t.status = CASE
+              WHEN t.status <> 'in_progress' THEN t.status
+              WHEN t.step IS NULL THEN 'todo'
+              ELSE 'awaiting'
+            END,
             t.updatedAt = $now
         WITH t, a
         MATCH (c:Counter {name: 'events'})

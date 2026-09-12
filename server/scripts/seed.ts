@@ -14,8 +14,11 @@ async function main() {
   await checkConnection();
   await initSchema();
 
-  // Reset the board: tasks, events, and any claims, but keep the agents.
+  // Reset the workspace: projects, tasks, memory, events and any claims. Agents
+  // are kept — their ids appear in the event history.
+  await driver.executeQuery("MATCH (n:Project) DETACH DELETE n");
   await driver.executeQuery("MATCH (n:Task) DETACH DELETE n");
+  await driver.executeQuery("MATCH (n:Memory) DETACH DELETE n");
   await driver.executeQuery("MATCH (n:Event) DELETE n");
   await driver.executeQuery("MATCH (c:Counter {name: 'events'}) SET c.seq = 0");
 

@@ -7,6 +7,7 @@
     "seed": "tsx scripts/seed.ts",
     "race-test": "tsx scripts/race-test.ts",
     "lease-test": "tsx scripts/lease-test.ts",
+    "pipeline-test": "tsx scripts/pipeline-test.ts",
     "check": "tsc --noEmit"
   },
   "dependencies": {

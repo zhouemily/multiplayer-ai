@@ -13,16 +13,30 @@ export const driver = neo4j.driver(
 export interface TaskView {
   id: string;
   title: string;
-  status: "todo" | "in_progress" | "done";
+  status: "todo" | "awaiting" | "in_progress" | "done" | "blocked";
   claimedBy: string | null;
   /** ISO-8601 UTC; null when unclaimed. Past this instant the claim is stealable. */
   leaseExpiresAt: string | null;
   result: string | null;
+  /** Pipeline position. Null for standalone board tasks. */
+  step: "design" | "design_review" | "execute" | "execute_review" | "done" | null;
+  attempt: number | null;
+  maxAttempts: number | null;
+  projectId: string | null;
+}
+
+export interface ProjectView {
+  id: string;
+  goal: string;
+  status: string;
+  /** Subtask ids in the order the manager laid them out. */
+  subtaskIds: string[];
 }
 
 export interface AgentView {
   id: string;
   name: string;
+  role: string | null;
   claimedTaskIds: string[];
 }
 
@@ -39,23 +53,37 @@ export interface EventView {
 export async function readState(): Promise<{
   agents: AgentView[];
   tasks: TaskView[];
+  projects: ProjectView[];
   events: EventView[];
 }> {
   const tasksResult = await driver.executeQuery(
     `
     MATCH (t:Task)
     OPTIONAL MATCH (a:Agent)-[r:CLAIMED_BY]->(t)
+    OPTIONAL MATCH (p:Project)-[:HAS_SUBTASK]->(t)
     RETURN t.id AS id, t.title AS title, t.status AS status,
            t.result AS result, t.createdAt AS createdAt,
+           t.step AS step, t.attempt AS attempt, t.maxAttempts AS maxAttempts,
+           p.id AS projectId,
            a.id AS claimedBy, r.leaseExpiresAt AS leaseExpiresAt
     ORDER BY t.createdAt ASC, t.id ASC
+    `,
+  );
+  const projectsResult = await driver.executeQuery(
+    `
+    MATCH (p:Project)
+    OPTIONAL MATCH (p)-[h:HAS_SUBTASK]->(t:Task)
+    WITH p, t, h ORDER BY h.order ASC
+    RETURN p.id AS id, p.goal AS goal, p.status AS status,
+           collect(t.id) AS subtaskIds, p.createdAt AS createdAt
+    ORDER BY p.createdAt DESC
     `,
   );
   const agentsResult = await driver.executeQuery(
     `
     MATCH (a:Agent)
     OPTIONAL MATCH (a)-[:CLAIMED_BY]->(t:Task)
-    RETURN a.id AS id, a.name AS name, collect(t.id) AS claimedTaskIds
+    RETURN a.id AS id, a.name AS name, a.role AS role, collect(t.id) AS claimedTaskIds
     ORDER BY a.id ASC
     `,
   );
@@ -63,13 +91,33 @@ export async function readState(): Promise<{
     "MATCH (e:Event) RETURN e ORDER BY e.seq DESC LIMIT 100",
   );
 
+  const num = (v: unknown): number | null => (v === null || v === undefined ? null : Number(v));
+
   return {
-    tasks: tasksResult.records.map((r) => r.toObject() as TaskView),
+    tasks: tasksResult.records.map((r) => {
+      const row = r.toObject() as TaskView;
+      return { ...row, attempt: num(row.attempt), maxAttempts: num(row.maxAttempts) };
+    }),
+    projects: projectsResult.records.map((r) => {
+      const row = r.toObject() as ProjectView & { subtaskIds: (string | null)[] };
+      return {
+        id: row.id,
+        goal: row.goal,
+        status: row.status,
+        subtaskIds: row.subtaskIds.filter((id): id is string => id !== null),
+      };
+    }),
     agents: agentsResult.records.map((r) => {
-      const row = r.toObject() as { id: string; name: string; claimedTaskIds: (string | null)[] };
+      const row = r.toObject() as {
+        id: string;
+        name: string;
+        role: string | null;
+        claimedTaskIds: (string | null)[];
+      };
       return {
         id: row.id,
         name: row.name,
+        role: row.role,
         claimedTaskIds: row.claimedTaskIds.filter((id) => id !== null),
       };
     }),

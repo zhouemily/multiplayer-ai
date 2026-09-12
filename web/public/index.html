@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Multiplayer AI — Shared Task Board</title>
+  <title>Multiplayer AI — Agent Team Orchestrator</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
     <div class="brand">
       <h1>Multiplayer AI</h1>
-      <p>Two agents · one shared graph · Neo4j Aura</p>
+      <p>One manager · many subagents · design → execute → review · Neo4j Aura</p>
     </div>
     <div id="conn" class="conn"><span class="dot"></span><span id="conn-text">connecting…</span></div>
   </header>
@@ -23,24 +23,31 @@
 
     <svg id="edges" class="edges"></svg>
 
-    <section id="board" class="board">
-      <div class="column" data-status="todo">
-        <h2>Backlog <span class="count" id="count-todo"></span></h2>
-        <form id="add-task" class="add-task">
-          <input id="add-task-title" type="text" placeholder="Add a task…" maxlength="80" autocomplete="off" />
-          <button type="submit">+</button>
-        </form>
-        <div class="tasks" id="col-todo"></div>
-      </div>
-      <div class="column" data-status="in_progress">
-        <h2>In Progress <span class="count" id="count-in_progress"></span></h2>
-        <div class="tasks" id="col-in_progress"></div>
-      </div>
-      <div class="column" data-status="done">
-        <h2>Done <span class="count" id="count-done"></span></h2>
-        <div class="tasks" id="col-done"></div>
-      </div>
-    </section>
+    <div class="center">
+      <section id="projects" class="panel projects-panel">
+        <h2>Projects <span class="count" id="count-projects"></span></h2>
+        <div id="project-list"></div>
+      </section>
+
+      <section id="board" class="board">
+        <div class="column" data-status="todo">
+          <h2>Backlog <span class="count" id="count-todo"></span></h2>
+          <form id="add-task" class="add-task">
+            <input id="add-task-title" type="text" placeholder="Add a standalone task…" maxlength="80" autocomplete="off" />
+            <button type="submit">+</button>
+          </form>
+          <div class="tasks" id="col-todo"></div>
+        </div>
+        <div class="column" data-status="in_progress">
+          <h2>In Progress <span class="count" id="count-in_progress"></span></h2>
+          <div class="tasks" id="col-in_progress"></div>
+        </div>
+        <div class="column" data-status="done">
+          <h2>Done <span class="count" id="count-done"></span></h2>
+          <div class="tasks" id="col-done"></div>
+        </div>
+      </section>
+    </div>
 
     <section id="feed" class="panel feed-panel">
       <h2>Live Activity</h2>
