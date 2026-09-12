@@ -5,6 +5,10 @@ export const NEO4J_URI = required("NEO4J_URI");
 export const NEO4J_USER = process.env.NEO4J_USER ?? process.env.NEO4J_USERNAME ?? "neo4j";
 export const NEO4J_PASSWORD = process.env.NEO4J_PASSWORD ?? required("NEO4J_PASSWORD");
 
+// Must outlast any legitimate task, but stay short enough that a crashed agent's
+// board gets picked up again within the demo. Agents simulate 3-9s of work.
+export const LEASE_MINUTES = Number(process.env.LEASE_MINUTES ?? "10");
+
 export const driver = neo4j.driver(
   NEO4J_URI,
   neo4j.auth.basic(NEO4J_USER, NEO4J_PASSWORD),

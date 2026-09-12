@@ -42,6 +42,20 @@ npm run seed
 npm run race-test  # 10 rounds × 8 concurrent claims → exactly 1 winner each
 ```
 
+## Why a dead agent can't wedge the board
+
+Each claim carries a lease — `leaseExpiresAt` on the same edge. `claim_task`
+deletes expired claim edges inside its own statement, so an abandoned task
+becomes claimable again and the takeover is still arbitrated by the uniqueness
+constraint (two agents racing for one expired lease still produce exactly one
+winner, logged as `claim_stolen`). Set `LEASE_MINUTES` in `.env` to change the
+window; the default of 10 comfortably outlasts the 3–9s of simulated work.
+`claim_task` also refuses tasks that are already `done`.
+
+```
+npm run lease-test  # claim → crash → peer takes over, still race-safe
+```
+
 ## Setup
 
 ```
@@ -69,7 +83,7 @@ agent `human`.
 
 ## Repo layout
 
-- `server/` — MCP server (Streamable HTTP) + Cypher + seed + race test
+- `server/` — MCP server (Streamable HTTP) + Cypher + seed + race/lease tests
 - `agents/` — agent loop; `a` or `b` as argv picks the identity
 - `web/` — read API + single-page monitor UI (polls 1s, draws live claim edges)
 
@@ -81,10 +95,11 @@ agent `human`.
 (:Event {id, seq, type, agentId, taskId, message, at})   // activity feed
 (:Counter {name: 'events', seq})
 
-(:Agent)-[:CLAIMED_BY {token: <task id>, claimedAt}]->(:Task)
+(:Agent)-[:CLAIMED_BY {token: <task id>, claimedAt, leaseExpiresAt}]->(:Task)
 ```
 
-Task statuses: `todo` → `in_progress` (on claim) → `done`.
+Task statuses: `todo` → `in_progress` (on claim) → `done`. `done` is terminal —
+`claim_task` refuses it.
 
 ## Troubleshooting
 

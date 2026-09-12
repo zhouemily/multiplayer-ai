@@ -6,6 +6,8 @@ export interface TaskView {
   title: string;
   status: "todo" | "in_progress" | "done";
   claimedBy: string | null;
+  /** ISO-8601 UTC; null when unclaimed. Past this instant the claim is stealable. */
+  leaseExpiresAt: string | null;
   result: string | null;
 }
 

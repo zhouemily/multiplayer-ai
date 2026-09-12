@@ -15,6 +15,8 @@ export interface TaskView {
   title: string;
   status: "todo" | "in_progress" | "done";
   claimedBy: string | null;
+  /** ISO-8601 UTC; null when unclaimed. Past this instant the claim is stealable. */
+  leaseExpiresAt: string | null;
   result: string | null;
 }
 
@@ -42,9 +44,10 @@ export async function readState(): Promise<{
   const tasksResult = await driver.executeQuery(
     `
     MATCH (t:Task)
-    OPTIONAL MATCH (a:Agent)-[:CLAIMED_BY]->(t)
+    OPTIONAL MATCH (a:Agent)-[r:CLAIMED_BY]->(t)
     RETURN t.id AS id, t.title AS title, t.status AS status,
-           t.result AS result, t.createdAt AS createdAt, a.id AS claimedBy
+           t.result AS result, t.createdAt AS createdAt,
+           a.id AS claimedBy, r.leaseExpiresAt AS leaseExpiresAt
     ORDER BY t.createdAt ASC, t.id ASC
     `,
   );

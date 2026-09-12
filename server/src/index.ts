@@ -33,7 +33,7 @@ function buildServer(): McpServer {
 
   server.tool(
     "claim_task",
-    "Atomically claim a task for an agent. Fails (ok:false) if the task does not exist, the agent is unknown, or another agent already holds the claim.",
+    "Atomically claim a task for an agent. Fails (ok:false) if the task does not exist, is already done, the agent is unknown, or another agent holds a live claim. A claim carries a lease; once it expires the task becomes claimable again and this tool takes it over, so a crashed agent cannot wedge the board.",
     { task_id: z.string(), agent_id: z.string() },
     async ({ task_id, agent_id }) => json(await claimTask(task_id, agent_id)),
   );

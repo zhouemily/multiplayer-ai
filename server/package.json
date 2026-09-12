@@ -6,6 +6,7 @@
     "dev": "tsx src/index.ts",
     "seed": "tsx scripts/seed.ts",
     "race-test": "tsx scripts/race-test.ts",
+    "lease-test": "tsx scripts/lease-test.ts",
     "check": "tsc --noEmit"
   },
   "dependencies": {

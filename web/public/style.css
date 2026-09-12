@@ -234,6 +234,7 @@ main {
   white-space: nowrap;
 }
 .badge.claim_won { background: rgba(47, 191, 113, 0.18); color: var(--done); }
+.badge.claim_stolen { background: rgba(155, 126, 222, 0.22); color: var(--released); }
 .badge.claim_lost { background: rgba(224, 82, 82, 0.18); color: var(--lost); }
 .badge.task_released { background: rgba(155, 126, 222, 0.18); color: var(--released); }
 .badge.task_updated { background: rgba(240, 180, 41, 0.14); color: var(--wip); }

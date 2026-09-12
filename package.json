@@ -11,6 +11,7 @@
     "mcp": "npm run dev -w server",
     "seed": "npm run seed -w server",
     "race-test": "npm run race-test -w server",
+    "lease-test": "npm run lease-test -w server",
     "agent:a": "npm run dev -w agents -- a",
     "agent:b": "npm run dev -w agents -- b",
     "web": "npm run dev -w web",

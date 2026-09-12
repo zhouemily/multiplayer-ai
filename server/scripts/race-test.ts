@@ -76,6 +76,8 @@ async function main() {
       failures++;
       console.error(`round ${round}: FAIL — could not release after claiming`);
     }
+    // claim_task refuses done tasks, so put it back in the pool for the next round.
+    await call("update_task", { task_id: taskId, status: "todo", agent_id: "race-test" });
   }
 
   await call("release_task", { task_id: taskId });
