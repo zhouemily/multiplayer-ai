@@ -14,13 +14,14 @@ async function main() {
   await checkConnection();
   await initSchema();
 
-  // Reset the workspace: projects, tasks, memory, events and any claims. Agents
-  // are kept — their ids appear in the event history.
+  // Reset the workspace: projects, tasks, memory, events, agents and any claims.
+  // agent-a/agent-b are recreated by the MERGE below.
   await driver.executeQuery("MATCH (n:Project) DETACH DELETE n");
   await driver.executeQuery("MATCH (n:Task) DETACH DELETE n");
   await driver.executeQuery("MATCH (n:Memory) DETACH DELETE n");
   await driver.executeQuery("MATCH (n:Event) DELETE n");
   await driver.executeQuery("MATCH (c:Counter {name: 'events'}) SET c.seq = 0");
+  await driver.executeQuery("MATCH (a:Agent) DETACH DELETE a");
 
   await driver.executeQuery(
     `MERGE (a:Agent {id: 'agent-a'}) ON CREATE SET a.name = 'Agent A'`,
