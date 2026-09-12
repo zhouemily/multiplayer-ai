@@ -1,0 +1,19 @@
+{
+  "name": "multiplayer-ai",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "server",
+    "agents",
+    "web"
+  ],
+  "scripts": {
+    "mcp": "npm run dev -w server",
+    "seed": "npm run seed -w server",
+    "race-test": "npm run race-test -w server",
+    "agent:a": "npm run dev -w agents -- a",
+    "agent:b": "npm run dev -w agents -- b",
+    "web": "npm run dev -w web",
+    "check": "npm run check -ws --if-present"
+  }
+}

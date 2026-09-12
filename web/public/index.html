@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multiplayer AI — Shared Task Board</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>Multiplayer AI</h1>
+      <p>Two agents · one shared graph · Neo4j Aura</p>
+    </div>
+    <div id="conn" class="conn"><span class="dot"></span><span id="conn-text">connecting…</span></div>
+  </header>
+
+  <main>
+    <section id="agents" class="panel agents-panel">
+      <h2>Agents</h2>
+      <div id="agent-list"></div>
+    </section>
+
+    <svg id="edges" class="edges"></svg>
+
+    <section id="board" class="board">
+      <div class="column" data-status="todo">
+        <h2>Backlog <span class="count" id="count-todo"></span></h2>
+        <form id="add-task" class="add-task">
+          <input id="add-task-title" type="text" placeholder="Add a task…" maxlength="80" autocomplete="off" />
+          <button type="submit">+</button>
+        </form>
+        <div class="tasks" id="col-todo"></div>
+      </div>
+      <div class="column" data-status="in_progress">
+        <h2>In Progress <span class="count" id="count-in_progress"></span></h2>
+        <div class="tasks" id="col-in_progress"></div>
+      </div>
+      <div class="column" data-status="done">
+        <h2>Done <span class="count" id="count-done"></span></h2>
+        <div class="tasks" id="col-done"></div>
+      </div>
+    </section>
+
+    <section id="feed" class="panel feed-panel">
+      <h2>Live Activity</h2>
+      <ul id="feed-list"></ul>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
