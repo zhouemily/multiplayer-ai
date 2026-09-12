@@ -31,6 +31,7 @@ function el(tag, className, text) {
 function renderAgents(agents, tasks) {
   const list = $("#agent-list");
   list.innerHTML = "";
+  $("#count-agents").textContent = String(agents.length);
 
   const busy = (a) => tasks.some((t) => t.claimedBy === a.id);
   const rank = (a) => (a.role === "manager" ? 0 : busy(a) ? 1 : 2);
@@ -42,10 +43,23 @@ function renderAgents(agents, tasks) {
     const claimedTasks = tasks.filter((t) => t.claimedBy === agent.id);
     const card = el("div", "agent-card" + (claimedTasks.length ? " working" : ""));
     if (agent.role === "manager") card.classList.add("manager");
+    if (agent.id === "agent-a" || agent.id === "agent-b") card.dataset.agent = agent.id;
     card.id = `agent-card-${agent.id}`;
 
+    const avatarClass =
+      agent.role === "manager"
+        ? "manager"
+        : agent.id === "agent-a" || agent.id === "agent-b"
+          ? agent.id
+          : "worker";
+    const initial =
+      agent.role === "manager" ? "M" : agent.id.startsWith("worker-") ? "W" : agent.id.slice(-1).toUpperCase();
+
+    const head = el("div", "agent-head");
+    head.append(el("div", `avatar ${avatarClass}`, initial));
     const name = el("div", "agent-name", agent.name);
     if (agent.role) name.append(el("span", "agent-role", agent.role));
+    head.append(name);
     const status = el("div", "agent-status");
     if (claimedTasks.length) {
       status.append(el("span", "pulse"));
@@ -55,7 +69,7 @@ function renderAgents(agents, tasks) {
     } else {
       status.textContent = claimedAny(tasks) ? "waiting for work…" : "board clear — idle";
     }
-    card.append(name, status);
+    card.append(head, status);
     list.append(card);
   }
 
@@ -118,7 +132,7 @@ function isPast(step, current) {
 function renderProjects(projects, tasks) {
   const list = $("#project-list");
   list.innerHTML = "";
-  $("#count-projects").textContent = `(${projects.length})`;
+  $("#count-projects").textContent = String(projects.length);
 
   if (projects.length === 0) {
     list.append(
@@ -185,7 +199,7 @@ function renderTasks(tasks) {
     col.innerHTML = "";
     const inStatus = standalone.filter((t) => t.status === status);
     for (const task of inStatus) col.append(taskCard(task));
-    $(`#count-${status}`).textContent = `(${inStatus.length})`;
+    $(`#count-${status}`).textContent = String(inStatus.length);
   }
 }
 
@@ -277,6 +291,19 @@ window.addEventListener("resize", () => {
     const state = JSON.parse(lastStateJson);
     drawEdges(state.agents, state.tasks);
   } catch {}
+});
+
+const themeToggle = $("#theme-toggle");
+function setTheme(light) {
+  document.body.classList.toggle("light", light);
+  document.body.classList.toggle("dark", !light);
+  themeToggle.setAttribute("aria-checked", String(!light));
+}
+setTheme(localStorage.getItem("theme") === "light");
+themeToggle.addEventListener("click", () => {
+  const light = !document.body.classList.contains("light");
+  localStorage.setItem("theme", light ? "light" : "dark");
+  setTheme(light);
 });
 
 poll();

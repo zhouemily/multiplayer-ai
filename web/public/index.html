@@ -6,18 +6,20 @@
   <title>Multiplayer AI — Agent Team Orchestrator</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body class="dark">
   <header>
     <div class="brand">
       <h1>Multiplayer AI</h1>
-      <p>One manager · many subagents · design → execute → review · Neo4j Aura</p>
     </div>
-    <div id="conn" class="conn"><span class="dot"></span><span id="conn-text">connecting…</span></div>
+    <div class="header-right">
+      <div id="conn" class="conn"><span class="dot"></span><span id="conn-text">connecting…</span></div>
+      <button class="theme-toggle" id="theme-toggle" role="switch" aria-checked="true" title="Toggle light / dark"><span class="knob"></span></button>
+    </div>
   </header>
 
   <main>
     <section id="agents" class="panel agents-panel">
-      <h2>Agents</h2>
+      <h2>Agents <span class="count" id="count-agents"></span></h2>
       <div id="agent-list"></div>
     </section>
 
